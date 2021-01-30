@@ -2,7 +2,7 @@
 Inspired by popular svn hook.
 
 
-This hook scans files that have staged changes (you can work around by doing git parkour if you reaaaally want) for ```nocheckin``` sequence.
+This hook scans files that have staged changes (you can work around this by doing git parkour if you reaaaally want) for ```nocheckin``` sequence.
 
 
 To install this hook globally for git you can download ```pre-commit``` executable from here:  
