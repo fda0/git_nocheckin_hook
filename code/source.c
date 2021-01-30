@@ -13,9 +13,13 @@ printf("%s%s\n", ErrorText1, ErrorText2);\
 exit(1);\
 }}while(0)
 
+#if _MSC_VER
 #define Open_Pipe(Command, Mode) _popen(Command, Mode)
 #define Close_Pipe(Handle) _pclose(Handle)
-
+#else
+#define Open_Pipe(Command, Mode) popen(Command, Mode)
+#define Close_Pipe(Handle) pclose(Handle)
+#endif
 
 int main(int arg_count, char *args[])
 {
