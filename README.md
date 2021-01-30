@@ -6,7 +6,7 @@ This hook scans files that have staged changes (you can work around by doing git
 
 
 To install this hook globally for git you can download ```pre-commit``` executable from here:  
-LINK
+https://github.com/fda0/git_nocheckin_hook/releases
 
 And set global git hooks path with:  
 ```git config --global core.hooksPath path/to/pre-commit```
