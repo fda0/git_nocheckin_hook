@@ -3,7 +3,7 @@
 #include <string.h>
 
 
-#define No_Checkin_String "no" "checkin"
+const static char match_string[] = "no" "checkin";
 
 
 #define Array_Count(a) ((sizeof(a))/(sizeof(*a)))
@@ -21,45 +21,77 @@ exit(1);\
 #define Close_Pipe(Handle) pclose(Handle)
 #endif
 
-int main(int arg_count, char *args[])
+int main()
 {
-    char *git_command = "git diff --name-only --staged";
-    FILE *git_query = Open_Pipe(git_command, "r");
-    Assert(git_query, "Failed to execute command: ", git_command);
+    int match_length = (int)strlen(match_string);
+    int match_found = 0;
     
-    char path[2048];
-    while (fgets(path, sizeof(path), git_query) != 0)
+    char *git_list_command = "git diff --name-only --staged";
+    FILE *git_list_query = Open_Pipe(git_list_command, "r");
+    Assert(git_list_query, "Failed to execute command: ", git_list_command);
+    
+    char path[4096];
+    while (fgets(path, sizeof(path), git_list_query) != 0)
     {
         char *new_line = strstr(path, "\n");
         if (new_line) { *new_line = 0; }
         
         //printf("[path] \"%s\"\n", path);
         
-        FILE *file = fopen(path, "rb");
-        Assert(file, "Failed to open file: ", path);
+        char git_content_command[4096 + 256];
+        snprintf(git_content_command, sizeof(git_content_command), "git show :%s", path);
         
-        fseek(file, 0, SEEK_END);
-        size_t file_size = ftell(file);
-        rewind(file);
+        FILE *git_content = Open_Pipe(git_content_command, "r");
+        Assert(git_content, "Failed to execute command: ", git_content_command);
         
-        if (file_size > 0)
+        
+        // NOTE: This search method won't work for strings
+        // that repeat their starting character - like: "noncheck"
+        int line = 1;
+        int column = 1;
+        int matched = 0;
+        
+        for (int c = fgetc(git_content);
+             c != EOF;
+             c = fgetc(git_content))
         {
-            char *memory = (char *)malloc(file_size+1);
-            Assert(memory, "Failed to allocate memory for file: ", path);
+            if (c == match_string[matched])
+            {
+                ++matched;
+                if (matched == match_length)
+                {
+                    printf("[%s found] File: %s; Line: %d; Column: %d\n",
+                           match_string, path, line, column-matched+1);
+                    matched = 0;
+                    match_found = 1;
+                }
+            }
+            else
+            {
+                matched = 0;
+                if (c == match_string[matched])
+                {
+                    ++matched;
+                }
+                else if (c == '\n')
+                {
+                    column = 0;
+                    ++line;
+                }
+            }
             
-            size_t read_bytes = fread(memory, 1, file_size, file);
-            Assert(read_bytes == file_size, "Whole file couldn't be read: ", path);
-            memory[read_bytes] = 0;
             
-            // TODO(fda0): Implement my own str search that count lines and pos
-            char *search = strstr(memory, No_Checkin_String);
-            Assert(search == 0, No_Checkin_String " found in file: ", path);
-            
-            free(memory);
+            if ((c & 0xc0) != 0x80) // NOTE: Count unicode characters
+            {
+                ++column;
+            }
         }
         
+        
+        Close_Pipe(git_content);
     }
     
-    Close_Pipe(git_query);
-    return 0;
+    Close_Pipe(git_list_query);
+    
+    return match_found;
 }
