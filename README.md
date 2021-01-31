@@ -4,7 +4,7 @@ Inspired by popular svn hook.
 
 
 This hook scans staged changes for ```nocheckin``` character sequence.  
-You can bypass this hook with ```git commit --no-verify```.
+You can bypass this hook with: ```git commit --no-verify```.
 
 
 
